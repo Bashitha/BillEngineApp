@@ -1,0 +1,11 @@
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\bin\Debug\netcoreapp2.0\BillEngineApp.deps.json
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\bin\Debug\netcoreapp2.0\BillEngineApp.runtimeconfig.json
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\bin\Debug\netcoreapp2.0\BillEngineApp.runtimeconfig.dev.json
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\bin\Debug\netcoreapp2.0\BillEngineApp.dll
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\obj\Debug\netcoreapp2.0\BillEngineApp.csprojResolveAssemblyReference.cache
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\obj\Debug\netcoreapp2.0\BillEngineApp.csproj.CoreCompileInputs.cache
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\obj\Debug\netcoreapp2.0\BillEngineApp.AssemblyInfoInputs.cache
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\obj\Debug\netcoreapp2.0\BillEngineApp.AssemblyInfo.cs
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\bin\Debug\netcoreapp2.0\BillEngineApp.pdb
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\obj\Debug\netcoreapp2.0\BillEngineApp.dll
+C:\Users\LBW\source\repos\BillEngineApp\BillEngineApp\obj\Debug\netcoreapp2.0\BillEngineApp.pdb
