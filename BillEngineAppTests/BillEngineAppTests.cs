@@ -138,6 +138,24 @@ namespace BillEngineAppTests
         }
 
         [Test]
+        public void OnCalculateTotalCallCharges_WhenInputCallerPhoneNumberAndCallerCDRListWithCDRSIncludingBothPeakTimesandPeakOffTimesInOneCDR_ShouldReturnCalculatedTotalCharges()
+        {
+            String callerPhoneNumber = "041-2256588";
+            List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, @"C:\Users\LBW\source\repos\BillEngineApp\CDR.csv");
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, cdrList);
+            Assert.AreEqual(74, (int)totalCallCharges, "1. Numbers are not equal.");
+        }
+
+        [Test]
+        public void OnCalculateTotalCallCharges_WhenInputCallerPhoneNumberAndCallerCDRListWithCDRSLessThanOneMinuteIncludingBothPeakTimesAndPeakOffTimesInOneCDR_ShouldReturnTotalCallCharges()
+        {
+            String callerPhoneNumber = "011-2256983";
+            List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, @"C:\Users\LBW\source\repos\BillEngineApp\CDR.csv");
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, cdrList);
+            Assert.AreEqual(8, (int)totalCallCharges, "1. Numbers are not equal.");
+        }
+
+        [Test]
         public void OnGenerateBill_WhenInputExistingPhoneNumber_ShouldReturnBillReport()
         {
             String callerPhoneNumber = "091-5232749";

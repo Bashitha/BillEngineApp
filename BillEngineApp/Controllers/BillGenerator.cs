@@ -136,17 +136,19 @@ namespace BillEngineApp.Controllers
             int perMinuteCharge = 0;            
             double totalCallCharges = 0;
             foreach (CDR cdr in cdrList)
-            {
-                double partNotCatchedInDurationInMinutes = cdr.Duration / 60.0 - cdr.Duration / 60;
+            {                
+                double partNotCatchedInDurationInMinutes = (cdr.Duration % 60) / 60.0 ;
                 double chargeForTheCall = 0.0;
+                bool areCallingAndCalledPartiesLocal = AreLocalPhoneNumbers(cdr.CallingPhoneNo, cdr.CalledPhoneNumber);
+
                 //add minute by minute until the required duration in minutes
                 for (int i=0; i < cdr.Duration/60; i++)
                 {
-                    cdr.Starting_Time = cdr.Starting_Time.AddMinutes(1);
-
+                    
                     if (cdr.Starting_Time.TimeOfDay < peakStartTime || cdr.Starting_Time.TimeOfDay >= peakOffTime)
                     {
-                        if(AreLocalPhoneNumbers(cdr.CallingPhoneNo,cdr.CalledPhoneNumber))
+                        
+                        if(areCallingAndCalledPartiesLocal)
                         {
                             perMinuteCharge = 2;
                         }
@@ -158,7 +160,8 @@ namespace BillEngineApp.Controllers
                     }
                     else
                     {
-                        if(AreLocalPhoneNumbers(cdr.CallingPhoneNo,cdr.CalledPhoneNumber))
+                       
+                        if (areCallingAndCalledPartiesLocal)
                         {                            
                             perMinuteCharge = 3;
                         }
@@ -170,11 +173,52 @@ namespace BillEngineApp.Controllers
 
                     totalCallCharges = totalCallCharges + perMinuteCharge;
                     chargeForTheCall = chargeForTheCall + perMinuteCharge;
+                    cdr.Starting_Time = cdr.Starting_Time.AddMinutes(1);
+
+                    // check whether after adding minute the Starting_Time has passed the peakStartTime and charged accordingly
+                    if(cdr.Starting_Time.TimeOfDay > peakStartTime && cdr.Starting_Time.AddMinutes(-1).TimeOfDay < peakStartTime)
+                    {
+                        int noOfSecondsPassedPeakStartTime = cdr.Starting_Time.Second - peakStartTime.Seconds;
+                        //reducing the charge added wrong with the wrong perMinuteCharge and add the correct perMinuteCharge
+                        totalCallCharges = totalCallCharges - (noOfSecondsPassedPeakStartTime / 60.0) * perMinuteCharge;
+                        chargeForTheCall = chargeForTheCall - (noOfSecondsPassedPeakStartTime / 60.0) * perMinuteCharge;
+
+                        if (areCallingAndCalledPartiesLocal)
+                        {
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 3;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 3;
+                        }
+                        else
+                        {
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 5;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 5;
+                        }
+                    }
+                    // check whether after adding minute the Starting_Time has passed the peakOffTime and charged accordingly
+                    else if (cdr.Starting_Time.TimeOfDay > peakOffTime && cdr.Starting_Time.AddMinutes(-1).TimeOfDay < peakOffTime)
+                    {
+                        int noOfSecondsPassedPeakOffTime = cdr.Starting_Time.Second - peakOffTime.Seconds;
+
+                        //reducing the charge added wrong with the wrong perMinuteCharge and add the correct perMinuteCharge
+                        totalCallCharges = totalCallCharges - (noOfSecondsPassedPeakOffTime / 60.0) * perMinuteCharge;
+                        chargeForTheCall = chargeForTheCall - (noOfSecondsPassedPeakOffTime / 60.0) * perMinuteCharge;
+
+                        if (areCallingAndCalledPartiesLocal)
+                        {
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 2;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 2;
+                        }
+                        else
+                        {
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 4;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 4;
+                        }
+                    }
                 }
                 //Adding the charges that not catched in the loop 
                 if (cdr.Starting_Time.TimeOfDay < peakStartTime || cdr.Starting_Time.TimeOfDay >= peakOffTime)
                 {
-                    if (AreLocalPhoneNumbers(cdr.CallingPhoneNo, cdr.CalledPhoneNumber))
+                    if (areCallingAndCalledPartiesLocal)
                     {
                         perMinuteCharge = 2;
                     }
@@ -185,7 +229,7 @@ namespace BillEngineApp.Controllers
                 }
                 else
                 {
-                    if (AreLocalPhoneNumbers(cdr.CallingPhoneNo, cdr.CalledPhoneNumber))
+                    if (areCallingAndCalledPartiesLocal)
                     {
                         perMinuteCharge = 3;
                     }
@@ -194,9 +238,48 @@ namespace BillEngineApp.Controllers
                         perMinuteCharge = 5;
                     }
                 }
+
                 totalCallCharges = totalCallCharges + perMinuteCharge * partNotCatchedInDurationInMinutes;
                 chargeForTheCall = chargeForTheCall + perMinuteCharge * partNotCatchedInDurationInMinutes;
 
+                //check whether the duration that is not charged passes the peakStartTime
+                DateTime callEndTime = cdr.Starting_Time.AddMinutes(partNotCatchedInDurationInMinutes);
+
+                if(cdr.Starting_Time.TimeOfDay < peakStartTime && callEndTime.TimeOfDay > peakStartTime)
+                {
+                    int noOfSecondsPassedPeakStartTime = callEndTime.Second - peakStartTime.Seconds;
+                    totalCallCharges = totalCallCharges - (noOfSecondsPassedPeakStartTime / 60.0) * perMinuteCharge;
+                    chargeForTheCall = chargeForTheCall - (noOfSecondsPassedPeakStartTime / 60.0) * perMinuteCharge;
+
+                    if (areCallingAndCalledPartiesLocal)
+                    {
+                        totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 3;
+                        chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 3;
+                    }
+                    else
+                    {
+                        totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 5;
+                        chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 5;
+                    }
+                }
+                else if (cdr.Starting_Time.TimeOfDay < peakOffTime && callEndTime.TimeOfDay > peakOffTime)
+                {
+                    int noOfSecondsPassedPeakOffTime = callEndTime.Second - peakOffTime.Seconds;
+                    totalCallCharges = totalCallCharges - (noOfSecondsPassedPeakOffTime / 60.0) * perMinuteCharge;
+                    chargeForTheCall = chargeForTheCall - (noOfSecondsPassedPeakOffTime / 60.0) * perMinuteCharge;
+
+                    if (areCallingAndCalledPartiesLocal)
+                    {
+                        totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 2;
+                        chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 2;
+                    }
+                    else
+                    {
+                        totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 4;
+                        chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 4;
+                    }
+                }
+                
                 //put call details into the list
                 CallDetails callDetails = new CallDetails
                 {
@@ -233,7 +316,6 @@ namespace BillEngineApp.Controllers
                     Rental = monthlyRental,
                     BillAmount = totalCallCharges + monthlyRental + tax - disount,
                     ListOfCallDetails = callDetailsForCallingPhoneNumber
-
                 };
                 return billReport;
             }
