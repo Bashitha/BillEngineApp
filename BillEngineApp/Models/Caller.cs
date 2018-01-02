@@ -10,7 +10,8 @@ namespace BillEngineApp.Models
         public String FullName { get; set; }
         public String BillingAddress { get; set; }
         public String PhoneNumber { get; set; }
-        public int PackageCode { get; set; }
+        public string PackageName { get; set; }
         public DateTime RegisteredDate { get; set; }
+        
     }
 }

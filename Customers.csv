@@ -1,10 +1,12 @@
-Full_name,Billing_Address,Phone_number,Package_Code,Registered_Date
-Leshan Bashitha Wijegunawardana,Weliwatta Hapugala Wakwella Galle,091-5232749,100,5/29/2017
-Thusitha Wijerathne,No. 85 Kurunegala,031-2536998,100,2/3/2017
-Sasitha Iresh,No. 60 Gampola Kandy,081-2249533,100,6/3/2017
-Dhanika Munasinghe,No. 55 Weligama Road Matara,041-2256588,100,7/1/2017
-Supun Sethsara,No. 33 Kottawa Rd Colombo 07,011-2256983,100,12/1/2017
-Menuka Weerasooriya,No. 66 Kurunegala,031-2253698,100,9/3/2017
-Nipun Jarathne,No. 66 Galle,091-2253647,100,6/9/2016
-Prasitha Sathsara,No. 99 Galle,091-2256328,100,3/1/2015
-Yasitha Harshanath,Matara,041-2243533,100,4/1/2015
+Full_name,Billing_Address,Phone_number,PackageName,Registered_Date
+Leshan Bashitha Wijegunawardana,Weliwatta Hapugala Wakwella Galle,091-5232749,Package B,5/29/2017
+Thusitha Wijerathne,No. 85 Kurunegala,031-2536998,Package B,2/3/2017
+Sasitha Iresh,No. 60 Gampola Kandy,081-2249533,Package B,6/3/2017
+Dhanika Munasinghe,No. 55 Weligama Road Matara,041-2256588,Package B,7/1/2017
+Supun Sethsara,No. 33 Kottawa Rd Colombo 07,011-2256983,Package B,12/1/2017
+Menuka Weerasooriya,No. 66 Kurunegala,031-2253698,Package B,9/3/2017
+Nipun Jarathne,No. 66 Galle,091-2253647,Package B,6/9/2016
+Prasitha Sathsara,No. 99 Galle,091-2256328,Package B,3/1/2015
+Yasitha Harshanath,Matara,041-2243533,Package B,4/1/2015
+Anupama Maddekande,Galle,091-2243980,Package A,1/1/2018
+

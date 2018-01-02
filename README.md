@@ -57,14 +57,29 @@ User Cases
 	Input - "041-2256588"
 	Output - 74
 	
-	3. When inpur a phone number with a cdr which contains duration of less than a minute and within that duration peakStartTime contains
+	3. When input a phone number with a cdr which contains duration of less than a minute and within that duration peakStartTime contains
 
 	Input - "011-2256983"
 	Output - 8
 	
+	4.When Input a package A subscription by a customer with its cdr list 
+	Input - "091-2243980"
+	Output-27
+	
 6. As a user I want to generate the bill when input a phone number and the cdr list
 
 	TestCases :
-	1. 
+	1. for a package B subscription
 	Input - "091-5232749"
 	Output - Bill Report
+	
+	2. for a package A subscription
+	Input - "091-2243980"
+	Output - Bill Report
+7. As a user I want to get the Package subscribed by a customer given his phoneNunmber
+
+	TestCases:
+	1. 
+	Input - "091-5232749"
+	Output - Package Details
+	
