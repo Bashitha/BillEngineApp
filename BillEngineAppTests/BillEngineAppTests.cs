@@ -193,7 +193,7 @@ namespace BillEngineAppTests
             Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber,callerListPath);
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName,packageListPath);
             Assert.AreEqual("Package B", package.PackageName, "Package Names are not equal.");
-            Assert.AreEqual("Per second", package.BillingType, "Billing types are not equal.");
+            Assert.AreEqual("Per Second", package.BillingType, "Billing types are not equal.");
             
         }
         [Test]
@@ -205,6 +205,26 @@ namespace BillEngineAppTests
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
             double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
             Assert.AreEqual(27, (int)totalCallCharges, "1. Numbers are not equal.");
+        }
+        [Test]
+        public void OnCalculateTotalCallCharges_WhenInputPackageCSubscriptionAndCDRListForThatParticualarCustomer_ShouldReturnTotalCallCharges()
+        {
+            String callerPhoneNumber = "091-2242020";
+            List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
+            Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
+            Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
+            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
+            Assert.AreEqual(14, (int)totalCallCharges, "1. Numbers are not equal.");
+        }
+        [Test]
+        public void OnCalculateTotalCallCharges_WhenInputPackageDSubscriptionAndCDRListForThatParticualarCustomer_ShouldReturnTotalCallCharges()
+        {
+            String callerPhoneNumber = "091-2242850";
+            List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
+            Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
+            Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
+            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
+            Assert.AreEqual(23, (int)totalCallCharges, "1. Numbers are not equal.");
         }
         [Test]
         public void OnGenerateBill_WhenInputExistingPhoneNumberWhichHasAPackageASubscription_ShouldReturnBillReport()

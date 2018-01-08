@@ -1,3 +1,5 @@
-Package,Monthly Rental,Billing Type
-Package A,100,Per minute
-Package B,100,Per second
+Package,Monthly Rental,Billing Type,PeakHourLocalCallsPerMinuteCharge,PeakHourLongCallsPerMinuteCharge,OffPeakHourLocalCallsPerMinuteCharge,OffPeakHourLongCallsPerMinuteCharge
+Package A,100,Per Minute,3,5,2,4
+Package B,100,Per Second,4,6,3,5
+Package C,300,Per Minute,2,3,1,2
+Package D,300,Per Second,3,5,2,4

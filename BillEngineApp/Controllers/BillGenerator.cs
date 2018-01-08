@@ -15,7 +15,8 @@ namespace BillEngineApp.Controllers
         private TimeSpan peakOffTime = new TimeSpan(20,0,0);
         private List<CallDetails> callDetailsForCallingPhoneNumber = new List<CallDetails>();
         private double disount = 0;
-        private double monthlyRental = 100.0;
+
+        
         public BillGenerator()
         {
         }
@@ -151,12 +152,16 @@ namespace BillEngineApp.Controllers
 
                             if (values[0] == packageName)
                             {
-                                
                                 return new Package
                                 {
                                     PackageName = values[0],
                                     BillingType = values[2],
-                                    MonthlyRental = Int32.Parse(values[1])
+                                    MonthlyRental = Int32.Parse(values[1]),
+                                    PeakHourLocalCallsPerMinuteCharge = Int32.Parse(values[3]),
+                                    PeakHourLongCallsPerMinuteCharge = Int32.Parse(values[4]),
+                                    OffPeakHourLocalCallsPerMinuteCharge = Int32.Parse(values[5]),
+                                    OffPeakHourLongCallsPerMinuteCharge = Int32.Parse(values[6])
+
                                 };
                             }
                         }
@@ -173,80 +178,43 @@ namespace BillEngineApp.Controllers
 
         }
 
+
         public int GetThePerMinuteChargeForTheCurrentMinute(Package package, TimeSpan currentTime, bool areCallingAndCalledPartiesLocal)
         {
             int perMinuteCharge = 0;
-            if (package.PackageName == "Package A")
+            
+            if (currentTime < peakStartTime || currentTime >= peakOffTime)
             {
-                if (currentTime < peakStartTime || currentTime >= peakOffTime)
-                {
-
-                    if (areCallingAndCalledPartiesLocal)
-                    {
-                        perMinuteCharge = 2;
-                    }
-                    else
-                    {
-                        perMinuteCharge = 4;
-                    }
-
-                }
-                else
-                {
-
-                    if (areCallingAndCalledPartiesLocal)
-                    {
-                        perMinuteCharge = 3;
-                    }
-                    else
-                    {
-                        perMinuteCharge = 5;
-                    }
-                }
+                if (areCallingAndCalledPartiesLocal)
+                    perMinuteCharge = package.OffPeakHourLocalCallsPerMinuteCharge;                
+                else                
+                    perMinuteCharge = package.OffPeakHourLongCallsPerMinuteCharge;            
             }
-            else if (package.PackageName == "Package B")
+            else
             {
-                if (currentTime < peakStartTime || currentTime >= peakOffTime)
-                {
-
-                    if (areCallingAndCalledPartiesLocal)
-                    {
-                        perMinuteCharge = 3;
-                    }
-                    else
-                    {
-                        perMinuteCharge = 5;
-                    }
-
-                }
-                else
-                {
-
-                    if (areCallingAndCalledPartiesLocal)
-                    {
-                        perMinuteCharge = 4;
-                    }
-                    else
-                    {
-                        perMinuteCharge = 6;
-                    }
-                }
+                if (areCallingAndCalledPartiesLocal)                
+                    perMinuteCharge = package.PeakHourLocalCallsPerMinuteCharge;                
+                else                
+                    perMinuteCharge = package.PeakHourLongCallsPerMinuteCharge;             
             }
+            
             return perMinuteCharge;
 
         }
         public double CalculateTotalCallCharges(Package package, List<CDR> cdrList)
         {
-            int perMinuteCharge = 0;            
+            int perMinuteCharge = 0;  
+            //to calculate the total call charges for one customer 
             double totalCallCharges = 0;
             foreach (CDR cdr in cdrList)
             {                
                 double partNotCatchedInDurationInMinutes = (cdr.Duration % 60) / 60.0 ;
+                //to calculate the charge for a one cdr
                 double chargeForTheCall = 0.0;
                 bool areCallingAndCalledPartiesLocal = AreLocalPhoneNumbers(cdr.CallingPhoneNo, cdr.CalledPhoneNumber);
 
                 //calculate total charges according to the package subscribed
-                if (package.PackageName == "Package A")
+                if (package.BillingType == "Per Minute")
                 {
                     for(int i=0; i < cdr.Duration / 60; i++)
                     {
@@ -262,7 +230,7 @@ namespace BillEngineApp.Controllers
                         chargeForTheCall = chargeForTheCall + perMinuteCharge;
                     }
                 }
-                else if (package.PackageName == "Package B")
+                else if (package.BillingType == "Per Second")
                 {
                     //add minute by minute until the required duration in minutes
                     for (int i = 0; i < cdr.Duration / 60; i++)
@@ -283,13 +251,13 @@ namespace BillEngineApp.Controllers
 
                             if (areCallingAndCalledPartiesLocal)
                             {
-                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 4;
-                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 4;
+                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLocalCallsPerMinuteCharge;
+                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLocalCallsPerMinuteCharge;
                             }
                             else
                             {
-                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 6;
-                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 6;
+                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLongCallsPerMinuteCharge;
+                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLongCallsPerMinuteCharge;
                             }
                         }
                         // check whether after adding minute the Starting_Time has passed the peakOffTime and charged accordingly
@@ -303,13 +271,13 @@ namespace BillEngineApp.Controllers
 
                             if (areCallingAndCalledPartiesLocal)
                             {
-                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 3;
-                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 3;
+                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLocalCallsPerMinuteCharge;
+                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLocalCallsPerMinuteCharge;
                             }
                             else
                             {
-                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 5;
-                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 5;
+                                totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLongCallsPerMinuteCharge;
+                                chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLongCallsPerMinuteCharge;
                             }
                         }
                     }
@@ -319,7 +287,7 @@ namespace BillEngineApp.Controllers
                     totalCallCharges = totalCallCharges + perMinuteCharge * partNotCatchedInDurationInMinutes;
                     chargeForTheCall = chargeForTheCall + perMinuteCharge * partNotCatchedInDurationInMinutes;
 
-                    //check whether the duration that is not charged passes the peakStartTime
+                    //check whether the duration that is not charged, passes the peakStartTime
                     DateTime callEndTime = cdr.Starting_Time.AddMinutes(partNotCatchedInDurationInMinutes);
 
                     if (cdr.Starting_Time.TimeOfDay < peakStartTime && callEndTime.TimeOfDay > peakStartTime)
@@ -330,13 +298,13 @@ namespace BillEngineApp.Controllers
 
                         if (areCallingAndCalledPartiesLocal)
                         {
-                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 4;
-                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 4;
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLocalCallsPerMinuteCharge;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLocalCallsPerMinuteCharge;
                         }
                         else
                         {
-                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * 6;
-                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * 6;
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLongCallsPerMinuteCharge;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakStartTime / 60.0) * package.PeakHourLongCallsPerMinuteCharge;
                         }
                     }
                     else if (cdr.Starting_Time.TimeOfDay < peakOffTime && callEndTime.TimeOfDay > peakOffTime)
@@ -347,13 +315,13 @@ namespace BillEngineApp.Controllers
 
                         if (areCallingAndCalledPartiesLocal)
                         {
-                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 3;
-                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 3;
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLocalCallsPerMinuteCharge;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLocalCallsPerMinuteCharge;
                         }
                         else
                         {
-                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * 5;
-                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * 5;
+                            totalCallCharges = totalCallCharges + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLongCallsPerMinuteCharge;
+                            chargeForTheCall = chargeForTheCall + (noOfSecondsPassedPeakOffTime / 60.0) * package.OffPeakHourLongCallsPerMinuteCharge;
                         }
                     }
                 }
