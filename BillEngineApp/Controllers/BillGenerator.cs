@@ -13,10 +13,7 @@ namespace BillEngineApp.Controllers
     {
         private TimeSpan peakStartTime = new TimeSpan(8,0,0);
         private TimeSpan peakOffTime = new TimeSpan(20,0,0);
-        private List<CallDetails> callDetailsForCallingPhoneNumber = new List<CallDetails>();
-        private double disount = 0;
-
-        
+        private IDictionary<String, List<CallDetails>> callDetailsOfIndividualCallersSeparately = new Dictionary<String,List<CallDetails>>();
         public BillGenerator()
         {
         }
@@ -179,35 +176,79 @@ namespace BillEngineApp.Controllers
         }
 
 
-        public int GetThePerMinuteChargeForTheCurrentMinute(Package package, TimeSpan currentTime, bool areCallingAndCalledPartiesLocal)
+        public int GetThePerMinuteChargeForTheCurrentMinute(Package package, TimeSpan peakStartTime, TimeSpan peakOffTime, TimeSpan callStartTime, TimeSpan currentTime, bool areCallingAndCalledPartiesLocal)
         {
             int perMinuteCharge = 0;
             
             if (currentTime < peakStartTime || currentTime >= peakOffTime)
             {
                 if (areCallingAndCalledPartiesLocal)
-                    perMinuteCharge = package.OffPeakHourLocalCallsPerMinuteCharge;                
-                else                
+                {
+                    if ((package.PackageName == "Package B" || package.PackageName == "Package C" ) && currentTime == callStartTime)
+                        perMinuteCharge = 0;
+                    else
+                        perMinuteCharge = package.OffPeakHourLocalCallsPerMinuteCharge;
+                }
+                else
                     perMinuteCharge = package.OffPeakHourLongCallsPerMinuteCharge;            
             }
             else
             {
-                if (areCallingAndCalledPartiesLocal)                
-                    perMinuteCharge = package.PeakHourLocalCallsPerMinuteCharge;                
-                else                
+                if (areCallingAndCalledPartiesLocal)
+                {
+                    if (package.PackageName == "Package C" && currentTime == callStartTime)
+                        perMinuteCharge = 0;
+                    else
+                        perMinuteCharge = package.PeakHourLocalCallsPerMinuteCharge;
+                }
+                else
                     perMinuteCharge = package.PeakHourLongCallsPerMinuteCharge;             
             }
             
             return perMinuteCharge;
 
         }
-        public double CalculateTotalCallCharges(Package package, List<CDR> cdrList)
+
+        //get peakStartTime and peakOffTime according to the package
+        public List<TimeSpan> GetPeakStartTimeAndPeakOffTime(string packageName)
+        {
+            List<TimeSpan> peakStartTimeAndPeakOffTime = new List<TimeSpan>();
+            TimeSpan peakStartTime;
+            TimeSpan offPeakStartTime;
+
+            if(packageName == "Package A")
+            {
+                peakStartTime = new TimeSpan(10, 0, 0);
+                offPeakStartTime = new TimeSpan(18, 0, 0);
+            }
+            else if(packageName == "Package C")
+            {
+                peakStartTime = new TimeSpan(9,0,0);
+                offPeakStartTime = new TimeSpan(18,0,0);
+            }
+            else
+            {
+                peakStartTime = new TimeSpan(8, 0, 0);
+                offPeakStartTime = new TimeSpan(20, 0, 0);
+            }
+
+            peakStartTimeAndPeakOffTime.Add(peakStartTime);
+            peakStartTimeAndPeakOffTime.Add(offPeakStartTime);
+
+            return peakStartTimeAndPeakOffTime;
+        }
+        public double CalculateTotalCallCharges(String callerPhoneNumber, Package package, List<CDR> cdrList)
         {
             int perMinuteCharge = 0;  
             //to calculate the total call charges for one customer 
             double totalCallCharges = 0;
+            List<CallDetails> callDetailsForCallingPhoneNumber = new List<CallDetails>();
+            TimeSpan peakStartTime = GetPeakStartTimeAndPeakOffTime(package.PackageName)[0];
+            TimeSpan peakOffTime = GetPeakStartTimeAndPeakOffTime(package.PackageName)[1];
+            
             foreach (CDR cdr in cdrList)
-            {                
+            {
+                TimeSpan callStartTime = cdr.Starting_Time.TimeOfDay;   
                 double partNotCatchedInDurationInMinutes = (cdr.Duration % 60) / 60.0 ;
                 //to calculate the charge for a one cdr
                 double chargeForTheCall = 0.0;
@@ -215,19 +256,19 @@ namespace BillEngineApp.Controllers
 
                 //calculate total charges according to the package subscribed
                 if (package.BillingType == "Per Minute")
-                {
-                    for(int i=0; i < cdr.Duration / 60; i++)
+                {                    
+                    for (int i=0; i < cdr.Duration / 60; i++)
                     {
-                        perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package, cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
+                        perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package, peakStartTime, peakOffTime, callStartTime, cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
                         totalCallCharges = totalCallCharges + perMinuteCharge;
                         chargeForTheCall = chargeForTheCall + perMinuteCharge;
-                        cdr.Starting_Time = cdr.Starting_Time.AddMinutes(1);
+                        cdr.Starting_Time = cdr.Starting_Time.AddMinutes(1);                        
                     }
                     if(partNotCatchedInDurationInMinutes!=0)
-                    {
-                        perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package, cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
+                    {                        
+                        perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package, peakStartTime, peakOffTime, callStartTime, cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
                         totalCallCharges = totalCallCharges + perMinuteCharge;
-                        chargeForTheCall = chargeForTheCall + perMinuteCharge;
+                        chargeForTheCall = chargeForTheCall + perMinuteCharge;                        
                     }
                 }
                 else if (package.BillingType == "Per Second")
@@ -235,7 +276,7 @@ namespace BillEngineApp.Controllers
                     //add minute by minute until the required duration in minutes
                     for (int i = 0; i < cdr.Duration / 60; i++)
                     {
-                        perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package,cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
+                        perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package, peakStartTime, peakOffTime, callStartTime, cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
 
                         totalCallCharges = totalCallCharges + perMinuteCharge;
                         chargeForTheCall = chargeForTheCall + perMinuteCharge;
@@ -282,7 +323,7 @@ namespace BillEngineApp.Controllers
                         }
                     }
                     //Adding the charges that not catched in the loop 
-                    perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package, cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
+                    perMinuteCharge = GetThePerMinuteChargeForTheCurrentMinute(package, peakStartTime, peakOffTime, callStartTime, cdr.Starting_Time.TimeOfDay, areCallingAndCalledPartiesLocal);
 
                     totalCallCharges = totalCallCharges + perMinuteCharge * partNotCatchedInDurationInMinutes;
                     chargeForTheCall = chargeForTheCall + perMinuteCharge * partNotCatchedInDurationInMinutes;
@@ -334,42 +375,53 @@ namespace BillEngineApp.Controllers
                     DestinationNumber = cdr.CalledPhoneNumber,
                     Charge = chargeForTheCall
                 };
-
+                
                 callDetailsForCallingPhoneNumber.Add(callDetails);
-                perMinuteCharge = 0;
+                perMinuteCharge = 0;                
                 
             }
+            callDetailsOfIndividualCallersSeparately.Add(callerPhoneNumber, callDetailsForCallingPhoneNumber);
 
             return totalCallCharges;
         }
 
-        public BillReport GenerateBill(string callerPhoneNumber, string cdrFilePath, string customerFilePath, string packageFilePath)
+        public List<BillReport> GenerateBill(List<String> callerPhoneNumbersList, string cdrFilePath, string customerFilePath, string packageFilePath)
         {
-            if (IsPhoneNumber(callerPhoneNumber))
+            List<BillReport> billReports = new List<BillReport>();
+            foreach (String callerPhoneNumber in callerPhoneNumbersList)
             {
-                Caller caller = GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, customerFilePath);
-                List<CDR> cdrListForTheCaller = GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrFilePath);
-                Package package = GetPackageSubscribedByTheCustomer(caller.PackageName, packageFilePath);
-                double totalCallCharges = CalculateTotalCallCharges(package, cdrListForTheCaller);
-                double tax = (package.MonthlyRental + totalCallCharges) * (20.0 / 100);
-                
-                BillReport billReport = new BillReport()
+                if (IsPhoneNumber(callerPhoneNumber))
                 {
-                    PhoneNumber = callerPhoneNumber,
-                    BillingAddress = caller.BillingAddress,
-                    TotalCallCharges = totalCallCharges,
-                    TotalDiscount = disount,
-                    Tax = tax,
-                    Rental = package.MonthlyRental,
-                    BillAmount = totalCallCharges + package.MonthlyRental + tax - disount,
-                    ListOfCallDetails = callDetailsForCallingPhoneNumber
-                };
-                return billReport;
+                    Caller caller = GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, customerFilePath);
+                    List<CDR> cdrListForTheCaller = GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrFilePath);
+                    Package package = GetPackageSubscribedByTheCustomer(caller.PackageName, packageFilePath);
+                    double totalCallCharges = CalculateTotalCallCharges(callerPhoneNumber, package, cdrListForTheCaller);
+                    double tax = (package.MonthlyRental + totalCallCharges) * (20.0 / 100);
+                    double discount = 0.0;
+
+                    if ((package.PackageName == "Package A" || package.PackageName == "Package B") && totalCallCharges >= 1000)
+                        discount = totalCallCharges * (40 / 100);
+
+                    BillReport billReport = new BillReport()
+                    {
+                        PhoneNumber = callerPhoneNumber,
+                        BillingAddress = caller.BillingAddress,
+                        TotalCallCharges = totalCallCharges,
+                        TotalDiscount = discount,
+                        Tax = tax,
+                        Rental = package.MonthlyRental,
+                        BillAmount = totalCallCharges + package.MonthlyRental + tax - discount,
+                        ListOfCallDetails = callDetailsOfIndividualCallersSeparately[callerPhoneNumber]
+                    };
+                    billReports.Add(billReport);
+                }
+                else
+                {
+                    billReports.Add(null);
+                }
             }
-            else
-            {
-                return null;
-            }
+
+            return billReports;
             
         }
     }

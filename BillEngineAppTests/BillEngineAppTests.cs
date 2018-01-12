@@ -141,8 +141,8 @@ namespace BillEngineAppTests
             List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
             Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
-            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
-            Assert.AreEqual(40, (int)totalCallCharges,"1. Numbers are not equal.");
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, package, cdrList);
+            Assert.AreEqual(37, (int)totalCallCharges,"1. Numbers are not equal.");
         }
 
         [Test]
@@ -152,7 +152,7 @@ namespace BillEngineAppTests
             List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
             Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
-            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, package, cdrList);
             Assert.AreEqual(94, (int)totalCallCharges, "1. Numbers are not equal.");
         }
 
@@ -163,27 +163,45 @@ namespace BillEngineAppTests
             List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
             Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
-            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, package, cdrList);
             Assert.AreEqual(10, (int)totalCallCharges, "1. Numbers are not equal.");
         }
 
         [Test]
         public void OnGenerateBill_WhenInputExistingPhoneNumberWithPackageBSubscription_ShouldReturnBillReport()
         {
-            String callerPhoneNumber = "091-5232749";
-            
-            BillReport bill = _sut.GenerateBill(callerPhoneNumber,cdrListPath,callerListPath,packageListPath);
-            Assert.AreEqual("091-5232749", bill.PhoneNumber, "1. Phone Numbers are not equal.");
-            Assert.AreEqual("Weliwatta Hapugala Wakwella Galle", bill.BillingAddress, "2. Billing addresses are not Equal");
-            Assert.AreEqual(40,(int)bill.TotalCallCharges,"3. Total Call Charges are not equal.");
-            Assert.AreEqual(0, bill.TotalDiscount, "4. Total Discounts are not equal.");
-            Assert.AreEqual(28, (int)bill.Tax, "5. Taxes are not equal.");
-            Assert.AreEqual(100, (int)bill.Rental, "6. Rentals are not equal");
-            Assert.AreEqual(168,(int)bill.BillAmount, "7. Bill Amounts are not equal.");
-            Assert.AreEqual(4,(int)bill.ListOfCallDetails[0].Charge,"8. Call charge for first call detail is wrong.");
-            Assert.AreEqual(30, (int)bill.ListOfCallDetails[1].Charge, "9. Call charge for second call detail is wrong.");
-            Assert.AreEqual(5, (int)bill.ListOfCallDetails[2].Charge, "10. Call charge for third call detail is wrong.");
+            String callerPhoneNumber1 = "091-5232749";
+            String callerPhoneNumber2 = "091-2243980";
 
+            List<String> callerPhoneNumbersList = new List<string>
+            {
+                callerPhoneNumber1,
+                callerPhoneNumber2
+            };
+
+            List<BillReport> billReports = _sut.GenerateBill(callerPhoneNumbersList,cdrListPath,callerListPath,packageListPath);
+
+            Assert.AreEqual("091-5232749", billReports[0].PhoneNumber, "1. Phone Numbers are not equal.");
+            Assert.AreEqual("Weliwatta Hapugala Wakwella Galle", billReports[0].BillingAddress, "2. Billing addresses are not Equal");
+            Assert.AreEqual(37,(int)billReports[0].TotalCallCharges,"3. Total Call Charges are not equal.");
+            Assert.AreEqual(0, billReports[0].TotalDiscount, "4. Total Discounts are not equal.");
+            Assert.AreEqual(27, (int)billReports[0].Tax, "5. Taxes are not equal.");
+            Assert.AreEqual(100, (int)billReports[0].Rental, "6. Rentals are not equal");
+            Assert.AreEqual(164,(int)billReports[0].BillAmount, "7. Bill Amounts are not equal.");
+            Assert.AreEqual(4,(int)billReports[0].ListOfCallDetails[0].Charge,"8. Call charge for first call detail is wrong.");
+            Assert.AreEqual(30, (int)billReports[0].ListOfCallDetails[1].Charge, "9. Call charge for second call detail is wrong.");
+            Assert.AreEqual(2, (int)billReports[0].ListOfCallDetails[2].Charge, "10. Call charge for third call detail is wrong.");
+
+            Assert.AreEqual("091-2243980", billReports[1].PhoneNumber, "11. Phone Numbers are not equal.");
+            Assert.AreEqual("Galle", billReports[1].BillingAddress, "12. Billing addresses are not Equal");
+            Assert.AreEqual(27, (int)billReports[1].TotalCallCharges, "13. Total Call Charges are not equal.");
+            Assert.AreEqual(0, billReports[1].TotalDiscount, "14. Total Discounts are not equal.");
+            Assert.AreEqual(25, (int)billReports[1].Tax, "15. Taxes are not equal.");
+            Assert.AreEqual(100, (int)billReports[1].Rental, "16. Rentals are not equal");
+            Assert.AreEqual(152, (int)billReports[1].BillAmount, "17. Bill Amounts are not equal.");
+            Assert.AreEqual(2, (int)billReports[1].ListOfCallDetails[0].Charge, "18. Call charge for first call detail is wrong.");
+            Assert.AreEqual(25, (int)billReports[1].ListOfCallDetails[1].Charge, "19. Call charge for second call detail is wrong.");
+            
         }
         [Test]
         public void OnGetPackageSubscribedByTheCustomer_WhenInputPhoneNumberAndPackagesList_ShouldReturnCorrespondingPackage()
@@ -203,7 +221,7 @@ namespace BillEngineAppTests
             List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
             Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
-            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, package, cdrList);
             Assert.AreEqual(27, (int)totalCallCharges, "1. Numbers are not equal.");
         }
         [Test]
@@ -213,8 +231,8 @@ namespace BillEngineAppTests
             List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
             Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
-            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
-            Assert.AreEqual(14, (int)totalCallCharges, "1. Numbers are not equal.");
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, package, cdrList);
+            Assert.AreEqual(13, (int)totalCallCharges, "1. Numbers are not equal.");
         }
         [Test]
         public void OnCalculateTotalCallCharges_WhenInputPackageDSubscriptionAndCDRListForThatParticualarCustomer_ShouldReturnTotalCallCharges()
@@ -223,25 +241,20 @@ namespace BillEngineAppTests
             List<CDR> cdrList = _sut.GetCDRSForCallerPhoneNumber(callerPhoneNumber, cdrListPath);
             Caller caller = _sut.GetCustomerDetailsForCallerPhoneNumber(callerPhoneNumber, callerListPath);
             Package package = _sut.GetPackageSubscribedByTheCustomer(caller.PackageName, packageListPath);
-            double totalCallCharges = _sut.CalculateTotalCallCharges(package, cdrList);
+            double totalCallCharges = _sut.CalculateTotalCallCharges(callerPhoneNumber, package, cdrList);
             Assert.AreEqual(23, (int)totalCallCharges, "1. Numbers are not equal.");
         }
+        
+        //get the peakStartTime and peakOffTime given the package
         [Test]
-        public void OnGenerateBill_WhenInputExistingPhoneNumberWhichHasAPackageASubscription_ShouldReturnBillReport()
+        public void OnGetPeakStartTimeAndPeakOffTime_WhenInputPackageName_ShouldReturnListOfDateTimeContainingPeakStartTimeAndPeakOffTime()
         {
-            String callerPhoneNumber = "091-2243980";
-            
-            BillReport bill = _sut.GenerateBill(callerPhoneNumber, cdrListPath, callerListPath, packageListPath);
-            Assert.AreEqual("091-2243980", bill.PhoneNumber, "1. Phone Numbers are not equal.");
-            Assert.AreEqual("Galle", bill.BillingAddress, "2. Billing addresses are not Equal");
-            Assert.AreEqual(27, (int)bill.TotalCallCharges, "3. Total Call Charges are not equal.");
-            Assert.AreEqual(0, bill.TotalDiscount, "4. Total Discounts are not equal.");
-            Assert.AreEqual(25, (int)bill.Tax, "5. Taxes are not equal.");
-            Assert.AreEqual(100, (int)bill.Rental, "6. Rentals are not equal");
-            Assert.AreEqual(152, (int)bill.BillAmount, "7. Bill Amounts are not equal.");
-            Assert.AreEqual(2, (int)bill.ListOfCallDetails[0].Charge, "8. Call charge for first call detail is wrong.");
-            Assert.AreEqual(25, (int)bill.ListOfCallDetails[1].Charge, "9. Call charge for second call detail is wrong.");
-           
+            String packageName = "Package A";
+            List<TimeSpan> peakStartTimeAndPeakOffTime = _sut.GetPeakStartTimeAndPeakOffTime(packageName);
+            TimeSpan expectedPeakStartTime = new TimeSpan(10, 0, 0);
+            TimeSpan expectedPeakOffTime = new TimeSpan(18, 0, 0);
+            Assert.AreEqual(expectedPeakStartTime,peakStartTimeAndPeakOffTime[0],"Times are not equal.");
+            Assert.AreEqual(expectedPeakStartTime, peakStartTimeAndPeakOffTime[0], "Times are not equal.");
         }
     }
 }

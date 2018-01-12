@@ -11,9 +11,10 @@ namespace BillEngineApp.Controllers
         bool AreLocalPhoneNumbers(string callerParty, string calledParty);
         List<CDR> GetCDRSForCallerPhoneNumber(string callerPhoneNumber, string filePath);
         Caller GetCustomerDetailsForCallerPhoneNumber(string callerPhoneNumber, string filePath);
-        double CalculateTotalCallCharges(Package package, List<CDR> cdrList);
-        BillReport GenerateBill(string callerPhoneNumber,string cdrFilePath, string customerFilePath,string packageFilePath);
-        int GetThePerMinuteChargeForTheCurrentMinute(Package package, TimeSpan currentTime, bool areCallingAndCalledPartiesLocal);
+        double CalculateTotalCallCharges(String callerPhoneNumber, Package package, List<CDR> cdrList);
+        List<BillReport> GenerateBill(List<String> callerPhoneNumbersList,string cdrFilePath, string customerFilePath,string packageFilePath);
+        int GetThePerMinuteChargeForTheCurrentMinute(Package package, TimeSpan peakStartTime, TimeSpan peakOffTime, TimeSpan callStartTime, TimeSpan currentTime, bool areCallingAndCalledPartiesLocal);
         Package GetPackageSubscribedByTheCustomer(string packageName, string packagesFilePath);
+        List<TimeSpan> GetPeakStartTimeAndPeakOffTime(string packageName);
     }
 }
